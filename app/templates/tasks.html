@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <br />
+    <div class="row">
+        <div class="col-md-10"><h1>Tasks</h1></div>
+        <div class="col-md-2 d-flex align-items-center justify-content-end">
+            <button type="button" class="btn btn-sm custom-btn" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                Add a new task
+            </button>
+        </div>
+    </div>
+
+    <div class="row border-bottom">
+        <div class="col-md-9"><svg width="12" height="12" style="visibility: hidden;"></svg><strong>Title</strong></div>
+        <div class="col-md-1"><strong>Status</strong></div>
+        <div class="col-md-1"><strong>Due date</strong></div>
+        <div class="col-md-1"><strong>Actions</strong></div>
+    </div>
+
+    {% for task in tasks %}
+    {% if task.parent_task == None %}
+    <div class="row">
+        <div class="col-md-9">
+            {% if task_has_subtasks[task.id] %}
+            <i class="fa-solid fa-caret-right expand-subtasks" data-parent-task-id="{{ task.id }}" style="cursor: pointer;"></i>
+            {% else %}
+            <svg width="8" height="8" style="visibility: hidden;"></svg>
+            {% endif %}
+            {{ task.name }}
+        </div>
+        <div class="col-md-1">{{ task.get_status_string() }}</div>
+        <div class="col-md-1">{{ task.due_date.strftime('%d/%m/%Y') }}</div>
+        <div class="col-md-1">
+            <a href="/task_detail/{{ task.id }}/" class="btn btn-sm custom-btn">
+                <i class="fa-solid fa-eye" style="color: #2e3440;"></i>
+            </a>
+
+            <button type="button"
+                    class="btn btn-sm custom-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#updateTaskModal"
+                    data-task-id="{{ task.id }}"
+                    data-task-name="{{ task.name }}"
+                    data-task-description="{{ task.description }}"
+                    data-task-status="{{ task.status }}"
+                    data-task-due-date="{{ task.due_date }}"
+                    data-task-min-effort="{{ task.min_effort_required }}"
+                    data-task-max-effort="{{ task.max_effort_required }}"
+                    data-task-owner="{{ task.owner }}"
+                    data-task-importance="{{ task.importance }}"
+                    data-task-parent-task="{{ task.parent_task }}">
+                <i class="fa-solid fa-regular fa-pen-to-square" style="color: #2e3440;"></i>
+            </button>
+
+            <button type="button" class="btn btn-sm delete-task-btn custom-btn" data-task-id="{{ task.id }}">
+                <i class="fa-solid fa-trash-can" style="color: #2e3440;"></i>
+            </button>
+
+            <button type="button" class="btn btn-sm custom-btn" data-bs-toggle="modal" onclick="setTaskId('{{ task.id }}')" data-bs-target="#createSubtaskModal">
+                <i class="fa-solid fa-plus" style="color: #2e3440;"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="subtasks-{{ task.id }}" class="subtasks" style="display: none;">
+        {% for subtask in tasks %}
+        {% if subtask.parent_task == task.id %}
+
+        <div class="row">
+            <div class="col-md-9" style="color: gray;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9492;&nbsp; {{ subtask.name }}</div>
+            <div class="col-md-1" style="color: gray;">{{ subtask.get_status_string() }}</div>
+            <div class="col-md-1" style="color: gray;">{{ subtask.due_date.strftime('%d/%m/%Y') }}</div>
+            <div class="col-md-1" style="color: gray;">
+                <a href="/task_detail/{{ subtask.id }}/" class="btn btn-sm custom-btn">
+                    <i class="fa-solid fa-eye" style="color: gray;"></i>
+                </a>
+
+                <button type="button"
+                        class="btn btn-sm custom-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#updateTaskModal"
+                        data-task-id="{{ subtask.id }}"
+                        data-task-name="{{ subtask.name }}"
+                        data-task-description="{{ subtask.description }}"
+                        data-task-status="{{ subtask.status }}"
+                        data-task-due-date="{{ subtask.due_date }}"
+                        data-task-min-effort="{{ subtask.min_effort_required }}"
+                        data-task-max-effort="{{ subtask.max_effort_required }}"
+                        data-task-owner="{{ subtask.owner }}"
+                        data-task-importance="{{ subtask.importance }}"
+                        data-task-parent-task="{{ subtask.parent_task }}">
+                    <i class="fa-solid fa-regular fa-pen-to-square" style="color: gray;"></i>
+                </button>
+
+                <button type="button" class="btn btn-sm delete-task-btn custom-btn" data-task-id="{{ subtask.id }}">
+                    <i class="fa-solid fa-trash-can" style="color: gray;"></i>
+                </button>
+
+                <button type="button" class="btn btn-sm custom-btn" data-bs-toggle="modal" onclick="setTaskId('{{ subtask.id }}')" data-bs-target="#createSubtaskModal">
+                    <i class="fa-solid fa-plus" style=" color: gray;"></i>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% endif %}
+    {% endfor %}
+
+    <div class="container">
+        <!-- Create Task Modal -->
+        <div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form id="create-task-form" action="/tasks/" method="post">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="createTaskModalLabel">Create a new task</h5>
+                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="not started">Not started</option>
+                                    <option value="in progress">In progress</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="blocked">Blocked</option>
+                                    <option value="done">Done</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Due Date</label>
+                                <input type="datetime-local" class="form-control" id="due_date" name="due_date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="min_effort_required" class="form-label">Min Effort Required</label>
+                                <input type="number" class="form-control" id="min_effort_required" name="min_effort_required" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="max_effort_required" class="form-label">Max Effort Required</label>
+                                <input type="number" class="form-control" id="max_effort_required" name="max_effort_required" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="importance" class="form-label">Importance</label>
+                                <input type="number" class="form-control" id="importance" name="importance" min="1" max="6" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Create Task</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Task Modal -->
+        <div class="modal fade" id="updateTaskModal" tabindex="-1" role="dialog" aria-labelledby="updateTaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form id="update-task-form" method="post">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="updateTaskModalLabel">Update Task</h5>
+                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="name" name="name" data-task-name required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" data-task-description required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" data-task-status required>
+                                    <option value="not started">Not started</option>
+                                    <option value="in progress">In progress</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="blocked">Blocked</option>
+                                    <option value="done">Done</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Due Date</label>
+                                <input type="datetime-local" class="form-control" id="due_date" name="due_date" data-task-due_date required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="min_effort_required" class="form-label">Min Effort Required</label>
+                                <input type="number" class="form-control" id="min_effort_required" name="min_effort_required" data-task-min_effort_required min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="max_effort_required" class="form-label">Max Effort Required</label>
+                                <input type="number" class="form-control" id="max_effort_required" name="max_effort_required" data-task-max_effort_required min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="importance" class="form-label">Importance</label>
+                                <input type="number" class="form-control" id="importance" name="importance" data-task-importance min="1" max="6" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="parent_task" class="form-label">Parent Id</label>
+                                <input type="text" id="parent_task" name="parent_task" data-task-parent-task readonly>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Update Task</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Subtask Modal -->
+        <div class="modal fade" id="createSubtaskModal" tabindex="-1" aria-labelledby="createSubtaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createSubtaskModalLabel">Add a new subtask</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createSubtaskForm" action="/subtasks/" method="post">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="not started">Not started</option>
+                                    <option value="in progress">In progress</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="blocked">Blocked</option>
+                                    <option value="done">Done</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Due Date</label>
+                                <input type="datetime-local" class="form-control" id="due_date" name="due_date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="min_effort_required" class="form-label">Min Effort Required</label>
+                                <input type="number" class="form-control" id="min_effort_required" name="min_effort_required" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="max_effort_required" class="form-label">Max Effort Required</label>
+                                <input type="number" class="form-control" id="max_effort_required" name="max_effort_required" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="importance" class="form-label">Importance</label>
+                                <input type="number" class="form-control" id="importance" name="importance" min="1" max="6" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="parent_task_id" class="form-label">Parent Id</label>
+                                <input type="text" id="parent_task_id" name="parent_task_id" readonly>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="createSubtaskButton">Create subtask</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    // custom function to capture the task.id
+    function setTaskId(taskId) {
+        document.getElementById("parent_task_id").value = taskId;
+    }
+
+    // Event listener for creating a new task
+    document.getElementById("create-task-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const jsonData = Object.fromEntries(formData.entries());
+
+        const response = await fetch("/tasks/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(jsonData),
+        });
+
+        if (response.ok) {
+            event.target.reset();
+            console.log("Task created successfully");
+
+            // Close the modal
+            const createTaskModal = new bootstrap.Modal(document.getElementById("createTaskModal"));
+            createTaskModal.hide();
+
+            // Reload the page to show the new task in the list
+            location.reload();
+        } else {
+            console.error("Error creating task", await response.json());
+        }
+    });
+
+    // Event listener for deleting a task
+    document.addEventListener("DOMContentLoaded", function () {
+        document.body.addEventListener("click", async function (event) {
+            if (event.target.closest(".delete-task-btn")) {
+                const deleteButton = event.target.closest(".delete-task-btn");
+                const taskId = deleteButton.getAttribute("data-task-id");
+                await deleteTask(taskId);
+            }
+        });
+
+        async function deleteTask(taskId) {
+            // Implement the delete functionality by calling the API
+            const response = await fetch(`/tasks/${taskId}/`, {
+                method: "DELETE",
+            });
+
+            if (response.ok) {
+                // Handle successful task deletion
+                // Example: reload the tasks list
+                console.log("Task deleted successfully");
+                location.reload();
+            } else {
+                console.error("Error deleting task", await response.json());
+            }
+        }
+
+    });
+
+    // Event listener for showing the Update Task Modal
+    document.getElementById("updateTaskModal").addEventListener("show.bs.modal", async (event) => {
+        const button = event.relatedTarget;
+        const taskId = button.getAttribute("data-task-id");
+
+        // Set the form action attribute
+        const form = document.getElementById("update-task-form");
+        form.action = `/tasks/${taskId}/`;
+
+        // Fetch the task details and populate the form fields
+        const response = await fetch(`/tasks/${taskId}/`);
+        const task = await response.json();
+
+        form.querySelector("#name").value = task.name;
+        form.querySelector("#description").value = task.description;
+        form.querySelector("#status").value = task.status;
+        form.querySelector("#due_date").value = task.due_date;
+        form.querySelector("#min_effort_required").value = task.min_effort_required;
+        form.querySelector("#max_effort_required").value = task.max_effort_required;
+        // form.querySelector("#owner").value = task.owner;
+        form.querySelector("#importance").value = task.importance;
+        form.querySelector("#parent_task").value = task.parent_task || '';
+    });
+
+    // Event listener for updating the task
+    document.getElementById("update-task-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const form = event.target;
+        // Get the task_id value from the custom data-task-id attribute
+        const taskId = form.getAttribute("data-task-id");
+
+        const formData = new FormData(form);
+        const jsonData = Object.fromEntries(formData.entries());
+
+        // Set parent_task to null if it is an empty string
+        if (jsonData.parent_task === '') {
+            jsonData.parent_task = null;
+        }
+
+        // Implement the update functionality by calling the API
+        const response = await fetch(`/tasks/${taskId}/`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(jsonData),
+        });
+
+        if (response.ok) {
+            // Handle successful task update
+            // Example: close the modal and reload the tasks list
+            console.log("Task updated successfully");
+            location.reload(); // Reload the page to show the updated task
+        } else {
+            console.error("Error updating task", await response.json());
+        }
+    });
+
+    // Event listener for creating a subtask
+    document.getElementById("createSubtaskButton").addEventListener("click", async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(document.getElementById("createSubtaskForm"));
+        const jsonData = Object.fromEntries(formData.entries());
+
+        const response = await fetch("/tasks/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(jsonData),
+        });
+
+        if (response.ok) {
+            document.getElementById("createSubtaskForm").reset();
+            console.log("Subtask created successfully");
+
+            // Close the modal
+            const createSubtaskModal = new bootstrap.Modal(document.getElementById("createSubtaskModal"));
+            createSubtaskModal.hide();
+
+            // Reload the page to show the new subtask in the list
+            location.reload();
+        } else {
+            console.error("Error creating subtask", await response.json());
+        }
+    });
+
+    // Add event listeners to all the Update buttons
+    const updateButtons = document.querySelectorAll("[data-bs-target='#updateTaskModal']");
+
+    for (const button of updateButtons) {
+        button.addEventListener("click", (event) => {
+            const taskId = event.currentTarget.getAttribute("data-task-id");
+            const form = document.getElementById("update-task-form");
+            form.setAttribute("data-task-id", taskId);
+
+            // Populate the form fields with the task data
+            document.querySelector("[data-task-name]").value = event.target.getAttribute("data-task-name");
+            document.querySelector("[data-task-description]").value = event.target.getAttribute("data-task-description");
+            document.querySelector("[data-task-status]").value = event.target.getAttribute("data-task-status");
+            document.querySelector("[data-task-due-date]").value = event.target.getAttribute("data-task-due-date");
+            document.querySelector("[data-task-min-effort]").value = event.target.getAttribute("data-task-min-effort");
+            document.querySelector("[data-task-max-effort]").value = event.target.getAttribute("data-task-max-effort");
+            // document.querySelector("[data-task-owner]").value = event.target.getAttribute("data-task-owner");
+            document.querySelector("[data-task-importance]").value = event.target.getAttribute("data-task-importance");
+            document.querySelector("[data-task-parent-task]").value = event.target.getAttribute("data-task-parent-task");
+
+            // Change the form's title
+            document.getElementById("updateTaskModalLabel").innerText = "Update Task";
+        });
+    }
+
+    // Find all expand/condense buttons
+    const expandButtons = document.querySelectorAll(".expand-subtasks");
+
+    // Iterate through the buttons and add a click event listener
+    expandButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+            // Get the parent task ID from the data attribute
+            const parentTaskId = event.target.getAttribute("data-parent-task-id");
+
+            // Find the subtasks div with the unique ID based on the parent task ID
+            const subtasksDiv = document.getElementById(`subtasks-${parentTaskId}`);
+
+            // Toggle the visibility of the subtasks div
+            subtasksDiv.style.display = subtasksDiv.style.display === "none" ? "block" : "none";
+
+            // Toggle the icon of the expand/condense button
+            event.target.classList.toggle("fa-caret-right");
+            event.target.classList.toggle("fa-caret-down");
+        });
+    });
+
+</script>
+{% endblock %}
+
+

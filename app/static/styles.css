@@ -1,0 +1,92 @@
+/* styles.css */
+
+/* 
+    Background colors:
+
+    White (#FFFFFF): Used for the main background color of the application.
+    Light Grey (#F5F5F5): Used for secondary background colors, such as panels, text boxes, and input fields.
+    Text colors:
+
+    Dark Grey (#2E3440): Used for headers and subheaders, as well as text that needs to stand out from the background.
+    Light Grey (#F5F5F5): Used for the majority of text content.
+    Accent colors:
+
+    Accent Blue (#0A84FF): Used for buttons and other interactive elements, such as links.
+    Accent Green (#36B37E): Used for hover states and other subtle design elements.
+    Accent Yellow (#FFB900): Used for important notifications, alerts, or other high-priority elements.
+    Accent Red (#D73A49): Used for error messages or other critical alerts.
+*/
+
+:root {
+    --text-font: "Ubuntu";
+    --hover-color: #2E3440 !important;
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu" rel="stylesheet"/>
+
+/* Background colors */
+body {
+    font-family: var(--text-font), sans-serif;
+    background-color: #FFFFFF;
+}
+
+.panel {
+    background-color: #F5F5F5;
+}
+
+/* Text colors */
+h1, h2, h3 {
+    font-family: var(--text-font), sans-serif;
+    color: #2E3440;
+}
+
+p {
+    font-family: var(--text-font), sans-serif;
+    color: #2E3440;
+}
+
+/* Accent colors */
+.custom-btn {
+    font-family: var(--text-font), sans-serif;
+    background-color: #FFFFFF !important;
+    color: #2E3440 !important;
+    padding: 0px;
+}
+
+    .custom-btn:hover {
+        font-family: var(--text-font), sans-serif;
+        font-weight: bolder;
+        color: var(--hover-color);
+    }
+
+.alert {
+    font-family: var(--text-font), sans-serif;
+    background-color: #FFB900;
+    color: #2E3440;
+}
+
+.error {
+    font-family: var(--text-font), sans-serif;
+    background-color: #D73A49;
+    color: #FFFFFF;
+}
+
+/* link */
+.custom-link {
+    font-family: var(--text-font), sans-serif;
+    color: #2E3440;
+}
+
+    .custom-link:visited {
+        font-family: var(--text-font), sans-serif;
+        color: #2E3440;
+    }
+
+    .custom-link:hover {
+        font-family: var(--text-font), sans-serif;
+        color: var(--hover-color);
+    }
+
+
+
+
